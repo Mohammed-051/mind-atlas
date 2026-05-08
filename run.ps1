@@ -13,8 +13,17 @@ if (-not (Test-Path ".env")) {
 # Parse .env file
 $envVars = @{}
 Get-Content ".env" | ForEach-Object {
-    if ($_ -match '^\s*([^#][^=]+)=(.*)$') {
-        $envVars[$matches[1].Trim()] = $matches[2].Trim()
+    $line = $_.Trim()
+    if ([string]::IsNullOrWhiteSpace($line) -or $line.StartsWith('#')) {
+        return
+    }
+    if ($line -match '^(?<key>[^=]+)=(?<value>.*)$') {
+        $key = $matches['key'].Trim()
+        $value = $matches['value'].Trim()
+        if ($value.StartsWith('"') -and $value.EndsWith('"')) {
+            $value = $value.Trim('"')
+        }
+        $envVars[$key] = $value
     }
 }
 

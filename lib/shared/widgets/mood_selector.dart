@@ -55,11 +55,10 @@ class _MoodSelectorState extends State<MoodSelector>
         duration: const Duration(milliseconds: 300),
       );
       _controllers[mood.score] = controller;
-      _scaleAnimations[mood.score] = Tween<double>(begin: 1.0, end: 1.15)
-          .animate(CurvedAnimation(
-        parent: controller,
-        curve: Curves.elasticOut,
-      ));
+      _scaleAnimations[mood.score] = Tween<double>(
+        begin: 1.0,
+        end: 1.15,
+      ).animate(CurvedAnimation(parent: controller, curve: Curves.elasticOut));
     }
   }
 
@@ -85,8 +84,11 @@ class _MoodSelectorState extends State<MoodSelector>
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    return Wrap(
+      alignment: WrapAlignment.spaceEvenly,
+      runAlignment: WrapAlignment.center,
+      spacing: 8,
+      runSpacing: 8,
       children: moodOptions.map((mood) {
         final isSelected = widget.selectedScore == mood.score;
         return GestureDetector(
@@ -126,10 +128,10 @@ class _MoodSelectorState extends State<MoodSelector>
                     mood.label,
                     style: TextStyle(
                       fontSize: 12,
-                      fontWeight:
-                          isSelected ? FontWeight.w700 : FontWeight.w500,
-                      color:
-                          isSelected ? mood.color : AppColors.textSecondary,
+                      fontWeight: isSelected
+                          ? FontWeight.w700
+                          : FontWeight.w500,
+                      color: isSelected ? mood.color : AppColors.textSecondary,
                     ),
                   ),
                 ],

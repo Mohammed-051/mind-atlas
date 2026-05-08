@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/models/message.dart';
 import '../../core/providers/error_reporter.dart';
 import '../../core/providers/supabase_provider.dart';
+import '../../core/providers/auth_provider.dart';
 
 // Re-export so chat_screen.dart can use ChatMessage
 export '../../core/models/message.dart';
@@ -90,8 +91,11 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
     // Try to find today's active session
     final today = DateTime.now();
-    final startOfDay =
-        DateTime(today.year, today.month, today.day).toIso8601String();
+    final startOfDay = DateTime(
+      today.year,
+      today.month,
+      today.day,
+    ).toIso8601String();
 
     final existing = await client
         .from('chat_sessions')
@@ -113,11 +117,15 @@ class ChatNotifier extends StateNotifier<ChatState> {
     }
 
     // Create a new session
-    final newSession = await client.from('chat_sessions').insert({
-      'user_id': userId,
-      'title': 'Session ${today.month}/${today.day}',
-      'is_active': true,
-    }).select('id').single();
+    final newSession = await client
+        .from('chat_sessions')
+        .insert({
+          'user_id': userId,
+          'title': 'Session ${today.month}/${today.day}',
+          'is_active': true,
+        })
+        .select('id')
+        .single();
 
     final sessionId = newSession['id'] as String;
     state = state.copyWith(sessionId: sessionId);
@@ -145,6 +153,18 @@ class ChatNotifier extends StateNotifier<ChatState> {
   /// Initialize the chat — call this when the chat screen mounts.
   Future<void> initializeChat() async {
     if (state.sessionId != null) return; // Already initialized
+
+    final client = _ref.read(supabaseClientProvider);
+    if (client.auth.currentSession == null) {
+      final isGuest = _ref.read(guestModeProvider);
+      state = state.copyWith(
+        isLoading: false,
+        error: isGuest
+            ? 'Chat is unavailable in guest mode. Please sign in.'
+            : 'Please sign in to chat.',
+      );
+      return;
+    }
 
     try {
       state = state.copyWith(isLoading: true, clearError: true);
@@ -212,10 +232,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
       // 3. Invoke the Edge Function via Supabase client
       final response = await client.functions.invoke(
         'ai_proxy',
-        body: {
-          'messages': history,
-          'sessionId': sessionId,
-        },
+        body: {'messages': history, 'sessionId': sessionId},
       );
 
       // 4. Parse response
@@ -224,7 +241,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
           : response.data as Map<String, dynamic>;
 
       final aiContent =
-          (data['message'] as String?) ?? 'I\'m here for you. Could you tell me more?';
+          (data['message'] as String?) ??
+          'I\'m here for you. Could you tell me more?';
 
       final aiMsg = ChatMessage.local(role: 'assistant', content: aiContent);
 
@@ -233,13 +251,22 @@ class ChatNotifier extends StateNotifier<ChatState> {
         isLoading: false,
       );
     } on FunctionException catch (e, st) {
-      ErrorReporter.captureException(e, stackTrace: st, context: 'chat.edgeFunction', extras: {'status': e.status});
+      ErrorReporter.captureException(
+        e,
+        stackTrace: st,
+        context: 'chat.edgeFunction',
+        extras: {'status': e.status},
+      );
       state = state.copyWith(
         isLoading: false,
         error: _friendlyFunctionError(e),
       );
     } catch (e, st) {
-      ErrorReporter.captureException(e, stackTrace: st, context: 'chat.sendMessage');
+      ErrorReporter.captureException(
+        e,
+        stackTrace: st,
+        context: 'chat.sendMessage',
+      );
       state = state.copyWith(
         isLoading: false,
         error: 'Connection error. Please check your internet.',

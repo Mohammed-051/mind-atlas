@@ -19,6 +19,7 @@ pubspec.lock
 **/android/key.properties
 *.jks
 *.keystore
+android/.kotlin/
 
 # iOS
 **/ios/**/*.mode1v3
@@ -69,6 +70,7 @@ pubspec.lock
 # IDE
 .idea/
 .vscode/
+.idea/runConfigurations/MindMentor_Dev.xml
 *.iml
 *.ipr
 *.iws
@@ -103,6 +105,7 @@ coverage/
 *.lcov
 
 # Misc
+.gradle/
 doc/api/
 .dart_tool/
 .packages

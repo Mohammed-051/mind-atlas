@@ -55,10 +55,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     ref.read(authNotifierProvider.notifier).clearError();
-    await ref.read(authNotifierProvider.notifier).signIn(
+    await ref
+        .read(authNotifierProvider.notifier)
+        .signIn(
           email: _emailController.text,
           password: _passwordController.text,
         );
+  }
+
+  Future<void> _continueAsGuest() async {
+    await ref.read(guestModeProvider.notifier).enable();
+    if (mounted) {
+      context.go('/');
+    }
   }
 
   @override
@@ -71,9 +80,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: AppColors.calmGradient,
-        ),
+        decoration: const BoxDecoration(gradient: AppColors.calmGradient),
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 28),
@@ -103,17 +110,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     const SizedBox(height: 28),
                     Text(
                       'Welcome Back',
-                      style: Theme.of(context)
-                          .textTheme
-                          .displayMedium
+                      style: Theme.of(context).textTheme.displayMedium
                           ?.copyWith(fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Sign in to continue your journey',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
+                        color: AppColors.textSecondary,
+                      ),
                     ),
 
                     const SizedBox(height: 40),
@@ -167,8 +172,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                 if (val == null || val.trim().isEmpty) {
                                   return 'Please enter your email';
                                 }
-                                if (!val.contains('@') ||
-                                    !val.contains('.')) {
+                                if (!val.contains('@') || !val.contains('.')) {
                                   return 'Please enter a valid email';
                                 }
                                 return null;
@@ -201,8 +205,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                 ),
                                 suffixIcon: IconButton(
                                   onPressed: () => setState(
-                                    () => _obscurePassword =
-                                        !_obscurePassword,
+                                    () => _obscurePassword = !_obscurePassword,
                                   ),
                                   icon: Icon(
                                     _obscurePassword
@@ -242,12 +245,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                 width: double.infinity,
                                 padding: const EdgeInsets.all(14),
                                 decoration: BoxDecoration(
-                                  color: AppColors.emergency
-                                      .withValues(alpha: 0.08),
+                                  color: AppColors.emergency.withValues(
+                                    alpha: 0.08,
+                                  ),
                                   borderRadius: AppRadius.mdBorder,
                                   border: Border.all(
-                                    color: AppColors.emergency
-                                        .withValues(alpha: 0.2),
+                                    color: AppColors.emergency.withValues(
+                                      alpha: 0.2,
+                                    ),
                                   ),
                                 ),
                                 child: Row(
@@ -283,6 +288,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                 isLoading: authState.isLoading,
                                 onPressed: _handleLogin,
                                 icon: Icons.arrow_forward_rounded,
+                              ),
+                            ),
+
+                            const SizedBox(height: 14),
+
+                            // Guest Button
+                            SizedBox(
+                              width: double.infinity,
+                              child: PillButton(
+                                label: 'Continue as Guest',
+                                onPressed: _continueAsGuest,
+                                backgroundColor: AppColors.primary,
+                                isOutlined: true,
+                                icon: Icons.person_outline_rounded,
                               ),
                             ),
                           ],

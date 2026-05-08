@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'error_reporter.dart';
@@ -17,11 +18,7 @@ class AppAuthState {
   final bool isLoading;
   final String? errorMessage;
 
-  const AppAuthState({
-    this.user,
-    this.isLoading = false,
-    this.errorMessage,
-  });
+  const AppAuthState({this.user, this.isLoading = false, this.errorMessage});
 
   bool get isAuthenticated => user != null;
 
@@ -40,7 +37,7 @@ class AppAuthState {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════��═══════════════════════════════════════════════════════════════════
 // Auth Notifier
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -65,22 +62,22 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
         .auth
         .onAuthStateChange
         .listen((data) {
-      final event = data.event;
-      final session = data.session;
+          final event = data.event;
+          final session = data.session;
 
-      switch (event) {
-        case AuthChangeEvent.signedIn:
-        case AuthChangeEvent.tokenRefreshed:
-        case AuthChangeEvent.userUpdated:
-          state = AppAuthState(user: session?.user);
-          break;
-        case AuthChangeEvent.signedOut:
-          state = const AppAuthState();
-          break;
-        default:
-          break;
-      }
-    });
+          switch (event) {
+            case AuthChangeEvent.signedIn:
+            case AuthChangeEvent.tokenRefreshed:
+            case AuthChangeEvent.userUpdated:
+              state = AppAuthState(user: session?.user);
+              break;
+            case AuthChangeEvent.signedOut:
+              state = const AppAuthState();
+              break;
+            default:
+              break;
+          }
+        });
   }
 
   @override
@@ -90,10 +87,8 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
   }
 
   /// Sign in with email and password.
-  Future<void> signIn({
-    required String email,
-    required String password,
-  }) async {
+  Future<void> signIn({required String email, required String password}) async {
+    await _ref.read(guestModeProvider.notifier).disable();
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
@@ -123,6 +118,7 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
     required String password,
     String? displayName,
   }) async {
+    await _ref.read(guestModeProvider.notifier).disable();
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
@@ -149,6 +145,7 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
 
   /// Sign out the current user.
   Future<void> signOut() async {
+    await _ref.read(guestModeProvider.notifier).disable();
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
@@ -156,7 +153,11 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
       await client.auth.signOut();
       state = const AppAuthState();
     } catch (e, st) {
-      ErrorReporter.captureException(e, stackTrace: st, context: 'auth.signOut');
+      ErrorReporter.captureException(
+        e,
+        stackTrace: st,
+        context: 'auth.signOut',
+      );
       state = state.copyWith(
         isLoading: false,
         errorMessage: 'Failed to sign out. Please try again.',
@@ -200,12 +201,52 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Guest Mode
+// ═══════════════════════════════════════════════════════════════════════════
+
+const kGuestModeKey = 'is_guest_mode';
+
+class GuestModeNotifier extends StateNotifier<bool> {
+  GuestModeNotifier() : super(false) {
+    _load();
+  }
+
+  final _storage = const FlutterSecureStorage();
+
+  Future<void> _load() async {
+    final value = await _storage.read(key: kGuestModeKey);
+    if (mounted) {
+      state = value == 'true';
+    }
+  }
+
+  Future<void> enable() async {
+    await _storage.write(key: kGuestModeKey, value: 'true');
+    if (mounted) {
+      state = true;
+    }
+  }
+
+  Future<void> disable() async {
+    await _storage.delete(key: kGuestModeKey);
+    if (mounted) {
+      state = false;
+    }
+  }
+}
+
+final guestModeProvider = StateNotifierProvider<GuestModeNotifier, bool>((ref) {
+  return GuestModeNotifier();
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
 // Providers
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Global auth state provider.
-final authNotifierProvider =
-    StateNotifierProvider<AuthNotifier, AppAuthState>((ref) {
+final authNotifierProvider = StateNotifierProvider<AuthNotifier, AppAuthState>((
+  ref,
+) {
   return AuthNotifier(ref);
 });
 

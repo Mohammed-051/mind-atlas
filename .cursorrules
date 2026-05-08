@@ -1,0 +1,24 @@
+# MindMentor Project Rules
+
+## Tech Stack Constraints
+- **Frontend**: Flutter, Riverpod (StateNotifier/AsyncNotifier), GoRouter.
+- **Backend**: Supabase (PostgreSQL with Row Level Security - RLS).
+- **Middleware**: Supabase Deno Edge Functions.
+
+## Security & AI Rules
+- **API Keys**: The Flutter client MUST NEVER hold the OpenRouter/Claude API key. All AI calls route through the Deno proxy (`supabase/functions/ai_proxy`).
+- **CRITICAL SAFETY PROTOCOL**: Any changes to the Chat UI must preserve the client-side keyword listener ("suicide", "self-harm", "kill myself", "end my life", "want to die") that locks the chat and redirects to `/emergency`. This is a non-negotiable medical safety requirement.
+
+## UI/UX Standards
+- **Material Widgets**: NEVER use default, unstyled Material widgets.
+- **Theming**: Enforce the premium pastel theme (midnight blues, soft creams, calm gradients) defined in `lib/core/theme/app_theme.dart`.
+- **Shared Components**: Use custom shared widgets like `PillButton` and `GlassCard` for a consistent frosted-glass and premium aesthetic.
+
+## Architecture Patterns
+- **State Management**: Providers and StateNotifiers must be used for asynchronous data fetching and state mutations.
+- **Routing Guards**: GoRouter handles auth-aware redirect guards relying on Supabase auth state.
+
+## Testing & QA Standards
+- **Mocking Engine**: All dependencies (Supabase, GoRouter, Riverpod Notifiers) MUST be mocked using `mocktail`. Do not use `mockito`.
+- **Safety Regression Rule**: Any modification to `lib/features/chat/chat_provider.dart` or `chat_screen.dart` REQUIRES running and/or updating the Crisis Intervention unit and widget tests. The safety keyword redirect must always be mathematically proven to work.
+- **UI Testing**: Any new shared widget added to `lib/shared/widgets/` must have a corresponding widget test in `test/shared/widgets/` using `tester.pumpWidget`.

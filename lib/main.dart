@@ -20,37 +20,44 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  // Initialize Supabase — must complete before app runs
-  await Supabase.initialize(
-    url: const String.fromEnvironment('SUPABASE_URL'),
-    anonKey: const String.fromEnvironment('SUPABASE_ANON_KEY'),
+  const supabaseUrl = String.fromEnvironment('SUPABASE_URL', defaultValue: '');
+  const supabaseAnonKey = String.fromEnvironment(
+    'SUPABASE_ANON_KEY',
+    defaultValue: '',
   );
+
+  if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty) {
+    throw Exception(
+      'Missing Supabase Environment Variables!\n'
+      'Please run the app using: flutter run --dart-define=SUPABASE_URL=... '
+      '--dart-define=SUPABASE_ANON_KEY=...\n'
+      'Or use the provided run.ps1/run.sh scripts.',
+    );
+  }
+
+  // Initialize Supabase — must complete before app runs
+  await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
 
   // Launch with or without Sentry based on DSN availability
   if (_sentryDsn.isNotEmpty) {
-    await SentryFlutter.init(
-      (options) {
-        options.dsn = _sentryDsn;
-        options.tracesSampleRate = 0.3;
-        options.environment =
-            const String.fromEnvironment('ENV', defaultValue: 'production');
-        options.sendDefaultPii = false; // Privacy-first
-        options.attachScreenshot = true;
-        options.enableAutoPerformanceTracing = true;
-      },
-      appRunner: () => _runApp(),
-    );
+    await SentryFlutter.init((options) {
+      options.dsn = _sentryDsn;
+      options.tracesSampleRate = 0.3;
+      options.environment = const String.fromEnvironment(
+        'ENV',
+        defaultValue: 'production',
+      );
+      options.sendDefaultPii = false; // Privacy-first
+      options.attachScreenshot = true;
+      options.enableAutoPerformanceTracing = true;
+    }, appRunner: () => _runApp());
   } else {
     _runApp();
   }
 }
 
 void _runApp() {
-  runApp(
-    const ProviderScope(
-      child: MindMentorApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: MindMentorApp()));
 }
 
 /// Root application widget.
@@ -70,13 +77,15 @@ class MindMentorApp extends ConsumerWidget {
     SystemChrome.setSystemUIOverlayStyle(
       SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness:
-            brightness == Brightness.dark ? Brightness.light : Brightness.dark,
+        statusBarIconBrightness: brightness == Brightness.dark
+            ? Brightness.light
+            : Brightness.dark,
         systemNavigationBarColor: brightness == Brightness.dark
             ? AppColors.darkSurface
             : AppColors.surface,
-        systemNavigationBarIconBrightness:
-            brightness == Brightness.dark ? Brightness.light : Brightness.dark,
+        systemNavigationBarIconBrightness: brightness == Brightness.dark
+            ? Brightness.light
+            : Brightness.dark,
       ),
     );
 

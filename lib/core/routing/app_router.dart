@@ -6,6 +6,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/providers/auth_provider.dart';
 import '../../features/auth/login_screen.dart';
 import '../../features/auth/register_screen.dart';
 import '../../features/onboarding/onboarding_screen.dart';
@@ -40,12 +41,33 @@ class GoRouterRefreshStream extends ChangeNotifier {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Tracks whether the user has completed onboarding.
-/// Read once at app startup, cached for the session.
-final hasSeenOnboardingProvider = FutureProvider<bool>((ref) async {
-  const storage = FlutterSecureStorage();
-  final value = await storage.read(key: kOnboardingCompleteKey);
-  return value == 'true';
-});
+/// Loaded at startup and updated when onboarding is completed.
+class OnboardingStatusNotifier extends StateNotifier<bool> {
+  OnboardingStatusNotifier() : super(false) {
+    _load();
+  }
+
+  final _storage = const FlutterSecureStorage();
+
+  Future<void> _load() async {
+    final value = await _storage.read(key: kOnboardingCompleteKey);
+    if (mounted) {
+      state = value == 'true';
+    }
+  }
+
+  Future<void> complete() async {
+    await _storage.write(key: kOnboardingCompleteKey, value: 'true');
+    if (mounted) {
+      state = true;
+    }
+  }
+}
+
+final onboardingStatusProvider =
+    StateNotifierProvider<OnboardingStatusNotifier, bool>((ref) {
+      return OnboardingStatusNotifier();
+    });
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Router Configuration
@@ -59,8 +81,9 @@ final routerProvider = Provider<GoRouter>((ref) {
   final rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
   final shellNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
 
-  // Watch onboarding state — triggers router refresh when resolved
-  final hasSeenOnboarding = ref.watch(hasSeenOnboardingProvider);
+  // Watch onboarding state — triggers router refresh when it changes
+  final hasSeenOnboarding = ref.watch(onboardingStatusProvider);
+  final isGuest = ref.watch(guestModeProvider);
 
   return GoRouter(
     navigatorKey: rootNavigatorKey,
@@ -74,30 +97,30 @@ final routerProvider = Provider<GoRouter>((ref) {
 
     // ── Auth + Onboarding Redirect Guard ─────────────────────
     redirect: (context, state) {
-      final isLoggedIn =
-          Supabase.instance.client.auth.currentSession != null;
+      final isLoggedIn = Supabase.instance.client.auth.currentSession != null;
+      final isLoggedInOrGuest = isLoggedIn || isGuest;
       final currentPath = state.uri.path;
 
       // Emergency is ALWAYS accessible — critical safety feature
       if (currentPath == '/emergency') return null;
 
-      // Check onboarding status (default to false while loading)
-      final seenOnboarding = hasSeenOnboarding.valueOrNull ?? false;
+      // Check onboarding status
+      final seenOnboarding = hasSeenOnboarding;
 
       // First-time user: redirect to onboarding
       if (!seenOnboarding &&
-          !isLoggedIn &&
+          !isLoggedInOrGuest &&
           currentPath != '/onboarding') {
         return '/onboarding';
       }
 
       // Not logged in → force to login (unless already on a public page)
-      if (!isLoggedIn && !_publicPaths.contains(currentPath)) {
+      if (!isLoggedInOrGuest && !_publicPaths.contains(currentPath)) {
         return '/login';
       }
 
-      // Logged in but on auth/onboarding pages → redirect to home
-      if (isLoggedIn &&
+      // Logged in/guest but on auth/onboarding pages → redirect to home
+      if (isLoggedInOrGuest &&
           (currentPath == '/login' ||
               currentPath == '/register' ||
               currentPath == '/onboarding')) {
@@ -153,23 +176,20 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/',
             name: 'home',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: HomeScreen(),
-            ),
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: HomeScreen()),
           ),
           GoRoute(
             path: '/chat',
             name: 'chat',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: ChatScreen(),
-            ),
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: ChatScreen()),
           ),
           GoRoute(
             path: '/insights',
             name: 'insights',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: InsightsScreen(),
-            ),
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: InsightsScreen()),
           ),
         ],
       ),

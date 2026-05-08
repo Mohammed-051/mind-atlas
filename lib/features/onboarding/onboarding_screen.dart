@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/routing/app_router.dart';
 import '../../shared/widgets/pill_button.dart';
 
 /// Key used in flutter_secure_storage to track onboarding completion.
 const kOnboardingCompleteKey = 'has_seen_onboarding';
 
 /// Premium onboarding flow — 3-slide PageView.
-class OnboardingScreen extends StatefulWidget {
+class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
   @override
-  State<OnboardingScreen> createState() => _OnboardingScreenState();
+  ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen>
+class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     with SingleTickerProviderStateMixin {
   final PageController _pageController = PageController();
   int _currentPage = 0;
@@ -73,8 +74,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 
   Future<void> _completeOnboarding() async {
-    const storage = FlutterSecureStorage();
-    await storage.write(key: kOnboardingCompleteKey, value: 'true');
+    debugPrint('[onboarding] Get Started pressed: writing flag');
+    await ref.read(onboardingStatusProvider.notifier).complete();
+    debugPrint('[onboarding] Flag written: navigating to /login');
 
     if (mounted) {
       context.go('/login');
@@ -102,9 +104,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: AppColors.calmGradient,
-        ),
+        decoration: const BoxDecoration(gradient: AppColors.calmGradient),
         child: SafeArea(
           child: FadeTransition(
             opacity: _fadeAnimation,
@@ -185,9 +185,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                           label: isLastPage ? 'Get Started' : 'Continue',
                           gradient: AppColors.primaryGradient,
                           onPressed: _nextPage,
-                          icon: isLastPage
-                              ? Icons.arrow_forward_rounded
-                              : null,
+                          icon: isLastPage ? Icons.arrow_forward_rounded : null,
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -253,11 +251,7 @@ class _OnboardingPage extends StatelessWidget {
                 ),
               ],
             ),
-            child: Icon(
-              data.icon,
-              color: Colors.white,
-              size: 56,
-            ),
+            child: Icon(data.icon, color: Colors.white, size: 56),
           ),
 
           const SizedBox(height: 48),
@@ -266,9 +260,9 @@ class _OnboardingPage extends StatelessWidget {
           Text(
             data.title,
             style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.3,
-                ),
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.3,
+            ),
             textAlign: TextAlign.center,
           ),
 
@@ -278,9 +272,9 @@ class _OnboardingPage extends StatelessWidget {
           Text(
             data.subtitle,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppColors.textSecondary,
-                  height: 1.6,
-                ),
+              color: AppColors.textSecondary,
+              height: 1.6,
+            ),
             textAlign: TextAlign.center,
           ),
         ],
