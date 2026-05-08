@@ -42,6 +42,29 @@ dev_dependencies:
   flutter_lints: ^5.0.0
   build_runner: ^2.4.14
   riverpod_generator: ^2.6.3
+  flutter_launcher_icons: ^0.14.3
+  flutter_native_splash: ^2.4.5
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/images/
+
+# ── Launcher Icon Configuration ────────────────────────
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/icon.png"
+  adaptive_icon_background: "#1A1D2E"
+  adaptive_icon_foreground: "assets/images/icon_foreground.png"
+  min_sdk_android: 21
+
+# ── Native Splash Screen Configuration ─────────────────
+flutter_native_splash:
+  color: "#FAF8F5"
+  color_dark: "#1A1D2E"
+  android: true
+  ios: true
+  android_12:
+    color: "#FAF8F5"
+    dark_color: "#1A1D2E"

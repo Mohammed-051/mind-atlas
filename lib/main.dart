@@ -15,16 +15,6 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  // System UI overlay styling
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-      systemNavigationBarColor: AppColors.surface,
-      systemNavigationBarIconBrightness: Brightness.dark,
-    ),
-  );
-
   // Initialize Supabase — must complete before app runs
   await Supabase.initialize(
     url: const String.fromEnvironment('SUPABASE_URL'),
@@ -42,6 +32,7 @@ void main() async {
 ///
 /// Uses [ConsumerWidget] so the router can be read from Riverpod,
 /// ensuring auth-aware redirects are properly wired.
+/// Supports system-adaptive light/dark theming.
 class MindMentorApp extends ConsumerWidget {
   const MindMentorApp({super.key});
 
@@ -49,10 +40,27 @@ class MindMentorApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
 
+    // Adapt system UI overlay to match current brightness
+    final brightness = MediaQuery.platformBrightnessOf(context);
+    SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness:
+            brightness == Brightness.dark ? Brightness.light : Brightness.dark,
+        systemNavigationBarColor: brightness == Brightness.dark
+            ? AppColors.darkSurface
+            : AppColors.surface,
+        systemNavigationBarIconBrightness:
+            brightness == Brightness.dark ? Brightness.light : Brightness.dark,
+      ),
+    );
+
     return MaterialApp.router(
       title: 'MindMentor',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.system,
       routerConfig: router,
     );
   }
