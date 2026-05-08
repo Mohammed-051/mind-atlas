@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/models/message.dart';
+import '../../core/providers/error_reporter.dart';
 import '../../core/providers/supabase_provider.dart';
 
 // Re-export so chat_screen.dart can use ChatMessage
@@ -231,14 +232,14 @@ class ChatNotifier extends StateNotifier<ChatState> {
         messages: [...state.messages, aiMsg],
         isLoading: false,
       );
-    } on FunctionException catch (e) {
-      debugPrint('Edge Function error: ${e.status} — ${e.details}');
+    } on FunctionException catch (e, st) {
+      ErrorReporter.captureException(e, stackTrace: st, context: 'chat.edgeFunction', extras: {'status': e.status});
       state = state.copyWith(
         isLoading: false,
         error: _friendlyFunctionError(e),
       );
-    } catch (e) {
-      debugPrint('Chat error: $e');
+    } catch (e, st) {
+      ErrorReporter.captureException(e, stackTrace: st, context: 'chat.sendMessage');
       state = state.copyWith(
         isLoading: false,
         error: 'Connection error. Please check your internet.',

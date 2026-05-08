@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/theme/app_theme.dart';
 import 'core/routing/app_router.dart';
+
+/// Sentry DSN — injected at build time via `--dart-define=SENTRY_DSN=...`.
+/// If empty, Sentry is disabled (safe for local development).
+const _sentryDsn = String.fromEnvironment('SENTRY_DSN', defaultValue: '');
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,6 +26,26 @@ void main() async {
     anonKey: const String.fromEnvironment('SUPABASE_ANON_KEY'),
   );
 
+  // Launch with or without Sentry based on DSN availability
+  if (_sentryDsn.isNotEmpty) {
+    await SentryFlutter.init(
+      (options) {
+        options.dsn = _sentryDsn;
+        options.tracesSampleRate = 0.3;
+        options.environment =
+            const String.fromEnvironment('ENV', defaultValue: 'production');
+        options.sendDefaultPii = false; // Privacy-first
+        options.attachScreenshot = true;
+        options.enableAutoPerformanceTracing = true;
+      },
+      appRunner: () => _runApp(),
+    );
+  } else {
+    _runApp();
+  }
+}
+
+void _runApp() {
   runApp(
     const ProviderScope(
       child: MindMentorApp(),

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'error_reporter.dart';
 import 'supabase_provider.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -107,7 +108,8 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
         isLoading: false,
         errorMessage: _friendlyAuthError(e),
       );
-    } catch (e) {
+    } catch (e, st) {
+      ErrorReporter.captureException(e, stackTrace: st, context: 'auth.signIn');
       state = state.copyWith(
         isLoading: false,
         errorMessage: 'An unexpected error occurred. Please try again.',
@@ -136,7 +138,8 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
         isLoading: false,
         errorMessage: _friendlyAuthError(e),
       );
-    } catch (e) {
+    } catch (e, st) {
+      ErrorReporter.captureException(e, stackTrace: st, context: 'auth.signUp');
       state = state.copyWith(
         isLoading: false,
         errorMessage: 'An unexpected error occurred. Please try again.',
@@ -152,7 +155,8 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
       final client = _ref.read(supabaseClientProvider);
       await client.auth.signOut();
       state = const AppAuthState();
-    } catch (e) {
+    } catch (e, st) {
+      ErrorReporter.captureException(e, stackTrace: st, context: 'auth.signOut');
       state = state.copyWith(
         isLoading: false,
         errorMessage: 'Failed to sign out. Please try again.',
