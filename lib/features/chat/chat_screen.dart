@@ -20,6 +20,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final FocusNode _focusNode = FocusNode();
 
   @override
+  void initState() {
+    super.initState();
+    // Initialize chat session (loads persisted messages or creates new session)
+    Future.microtask(() {
+      ref.read(chatProvider.notifier).initializeChat();
+    });
+  }
+
+  @override
   void dispose() {
     _textController.dispose();
     _scrollController.dispose();

@@ -1,38 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/models/mood_log.dart';
 import '../../core/providers/supabase_provider.dart';
 
-/// Data model for a mood log entry.
-class MoodLog {
-  final String id;
-  final String userId;
-  final int score;
-  final String moodLabel;
-  final String note;
-  final DateTime loggedAt;
+// Re-export so existing imports like `home_screen.dart` still work
+export '../../core/models/mood_log.dart';
 
-  MoodLog({
-    required this.id,
-    required this.userId,
-    required this.score,
-    required this.moodLabel,
-    required this.note,
-    required this.loggedAt,
-  });
-
-  factory MoodLog.fromMap(Map<String, dynamic> map) {
-    return MoodLog(
-      id: map['id'] as String,
-      userId: map['user_id'] as String,
-      score: map['score'] as int,
-      moodLabel: map['mood_label'] as String,
-      note: (map['note'] as String?) ?? '',
-      loggedAt: DateTime.parse(map['logged_at'] as String),
-    );
-  }
-}
-
-/// Notifier for managing mood log CRUD operations.
+/// Notifier for managing mood log CRUD operations via Supabase.
 class MoodLogsNotifier extends AsyncNotifier<List<MoodLog>> {
   @override
   Future<List<MoodLog>> build() async {
@@ -49,13 +23,14 @@ class MoodLogsNotifier extends AsyncNotifier<List<MoodLog>> {
         .select()
         .eq('user_id', userId)
         .order('logged_at', ascending: false)
-        .limit(50);
+        .limit(100);
 
     return (response as List)
-        .map((e) => MoodLog.fromMap(e as Map<String, dynamic>))
+        .map((e) => MoodLog.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 
+  /// Insert a new mood entry for the authenticated user.
   Future<void> logMood({
     required int score,
     required String label,
@@ -73,7 +48,7 @@ class MoodLogsNotifier extends AsyncNotifier<List<MoodLog>> {
       'logged_at': DateTime.now().toIso8601String(),
     });
 
-    // Refresh the list
+    // Refresh the list from database
     ref.invalidateSelf();
   }
 }
@@ -89,7 +64,7 @@ final recentMoodsProvider = FutureProvider<List<MoodLog>>((ref) async {
   return moods.take(5).toList();
 });
 
-/// Provides mood logs for a specific month (for insights).
+/// Provides mood logs for a specific month (for insights calendar).
 final monthlyMoodsProvider =
     FutureProvider.family<List<MoodLog>, DateTime>((ref, month) async {
   final allMoods = await ref.watch(moodLogsProvider.future);
