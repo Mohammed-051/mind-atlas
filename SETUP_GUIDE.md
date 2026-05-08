@@ -53,7 +53,7 @@ Once the project is created, navigate to **Project Settings** (gear icon in side
   - **Project URL**: `https://abcdefghijklmnop.supabase.co`
   - **anon public** key: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`
 
-> ⚠️ The **anon key** is safe for client-side use. Never expose the **service_role key**.
+> ⚠️ The **anon key** is safe for client-side use. Never expose the **s key**.
 
 ### 2c. Get an OpenRouter API Key
 

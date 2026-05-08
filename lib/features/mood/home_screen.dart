@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/providers/auth_provider.dart';
 import '../../shared/widgets/glass_card.dart';
 import '../../shared/widgets/mood_selector.dart';
 import '../../shared/widgets/gradient_scaffold.dart';
@@ -131,17 +132,41 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       ),
                     ],
                   ),
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      gradient: AppColors.primaryGradient,
-                      borderRadius: AppRadius.mdBorder,
+                  PopupMenuButton<String>(
+                    onSelected: (value) {
+                      if (value == 'signout') {
+                        ref.read(authNotifierProvider.notifier).signOut();
+                      }
+                    },
+                    shape: RoundedRectangleBorder(
+                      borderRadius: AppRadius.lgBorder,
                     ),
-                    child: const Icon(
-                      Icons.person_rounded,
-                      color: Colors.white,
-                      size: 24,
+                    offset: const Offset(0, 52),
+                    itemBuilder: (_) => [
+                      const PopupMenuItem(
+                        value: 'signout',
+                        child: Row(
+                          children: [
+                            Icon(Icons.logout_rounded,
+                                size: 20, color: AppColors.textSecondary),
+                            SizedBox(width: 10),
+                            Text('Sign Out'),
+                          ],
+                        ),
+                      ),
+                    ],
+                    child: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        gradient: AppColors.primaryGradient,
+                        borderRadius: AppRadius.mdBorder,
+                      ),
+                      child: const Icon(
+                        Icons.person_rounded,
+                        color: Colors.white,
+                        size: 24,
+                      ),
                     ),
                   ),
                 ],

@@ -25,7 +25,7 @@ void main() async {
     ),
   );
 
-  // Initialize Supabase
+  // Initialize Supabase — must complete before app runs
   await Supabase.initialize(
     url: const String.fromEnvironment('SUPABASE_URL'),
     anonKey: const String.fromEnvironment('SUPABASE_ANON_KEY'),
@@ -38,16 +38,22 @@ void main() async {
   );
 }
 
-class MindMentorApp extends StatelessWidget {
+/// Root application widget.
+///
+/// Uses [ConsumerWidget] so the router can be read from Riverpod,
+/// ensuring auth-aware redirects are properly wired.
+class MindMentorApp extends ConsumerWidget {
   const MindMentorApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(routerProvider);
+
     return MaterialApp.router(
       title: 'MindMentor',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      routerConfig: AppRouter.router,
+      routerConfig: router,
     );
   }
 }
