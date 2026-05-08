@@ -86,7 +86,7 @@ pubspec.lock
 .env
 .env.*
 !.env.example
-*.env
+!.env.edge.example
 secrets/
 *.pem
 *.p12
