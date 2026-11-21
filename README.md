@@ -1,4 +1,4 @@
-# mindmentor
+# mindatlas
 
 A new Flutter project.
 
